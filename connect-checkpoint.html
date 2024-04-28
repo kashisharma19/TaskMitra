@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+</head>
+<body>
+    <h1>Task Manager</h1>
+    <div>
+        <h2>Add Task</h2>
+        <label for="description">Description:</label>
+        <input type="text" id="description">
+        <label for="priority">Priority:</label>
+        <input type="text" id="priority">
+        <label for="dueDate">Due Date (YYYY-MM-DD):</label>
+        <input type="text" id="dueDate">
+        <button onclick="addTask()">Add Task</button>
+    </div>
+    <div>
+        <h2>Task List</h2>
+        <ul id="taskList"></ul>
+    </div>
+
+    <script>
+        // Function to add a task
+        function addTask() {
+            const description = document.getElementById('description').value;
+            const priority = document.getElementById('priority').value;
+            const dueDate = document.getElementById('dueDate').value;
+            const task = { description, priority, dueDate, completed: false };
+
+            fetch('/tasks', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(task)
+            })
+            .then(response => response.text())
+            .then(responseText => {
+                if (responseText === 'Task added') {
+                    displayTasks();
+                    document.getElementById('description').value = '';
+                    document.getElementById('priority').value = '';
+                    document.getElementById('dueDate').value = '';
+                }
+            });
+        }
+
+        // Function to remove a task
+        function removeTask(index) {
+            fetch(`/tasks/${index}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.text())
+            .then(responseText => {
+                if (responseText.startsWith('Task removed')) {
+                    displayTasks();
+                }
+            });
+        }
+
+        // Function to display tasks
+        function displayTasks() {
+            fetch('/tasks')
+            .then(response => response.json())
+            .then(tasks => {
+                const taskList = document.getElementById('taskList');
+                taskList.innerHTML = '';
+
+                tasks.forEach((task, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `${task.description} (Priority: ${task.priority}, Due Date: ${task.dueDate}, Status: ${task.completed ? 'Done' : 'Not Done'})`;
+                    const removeButton = document.createElement('button');
+                    removeButton.textContent = 'Remove';
+                    removeButton.addEventListener('click', () => removeTask(index));
+                    listItem.appendChild(removeButton);
+                    taskList.appendChild(listItem);
+                });
+            });
+        }
+
+        // Initial task list display
+        displayTasks();
+    </script>
+</body>
+</html>
